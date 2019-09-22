@@ -1,0 +1,218 @@
+<template>
+  <div class="tab">
+    <md-content>
+      <div class="sumtotal">
+        <span>Pumpkins: {{ pumpkin_count }} items for $ {{ pumpkin_total.toFixed(2) }}</span>
+      </div>
+      <div class="sumtotal">
+        <span>Gourds: {{ gourd_count }} items for $ {{ gourd_total.toFixed(2) }}</span>
+      </div>
+      <div class="sumtotal">
+        <span>Others: {{ other_count }} items for $ {{ other_total.toFixed(2) }}</span>
+      </div>
+      <div class="grandtotal">
+        <span>Grand total: {{ grand_count }} items for $ {{ grand_total.toFixed(2) }}</span>
+      </div>
+      <div>
+        <md-button class="md-primary" @click="showDialog=true">Pay</md-button>
+        <md-button @click="confirmReset=true">Clear</md-button>
+      </div>
+      <div class="otheroptions">
+        <div>
+          <!-- md-button @click="deleteLastOrder=true" class="md-accent">Delete Last Order Paid</md-button -->
+        </div>
+        <div>
+          <!-- <md-button @click="downloadRecords">Download Records</md-button -->
+        </div>
+      </div>
+    </md-content>
+
+    <md-dialog :md-active.sync="showDialog" class="paydialog">
+      <div class="paywrap">
+        <div class="payinside">
+          <md-dialog-title>Payment</md-dialog-title>
+          <div>
+            <p class="sumtotal">Total amount: $ {{ grand_total.toFixed(2) }}</p>
+            <div class="donation">
+              <label>Donation&nbsp;$&nbsp;</label>
+              <md-input
+                v-model="$store.state.donation"
+                type="number"
+                min="0"
+                @input="donation_made"
+              ></md-input>
+            </div>
+            <div class="bakesale">
+              <label>Bake Sale&nbsp;$&nbsp;</label>
+              <md-input v-model="$store.state.bakesale" type="number" min="0" @input="bake_sale"></md-input>
+            </div>
+            <div class="amountdue">
+              <span>Amount Due: $ {{ this.$store.state.final_total.toFixed(2) }}</span>
+            </div>
+            <div>
+              <md-radio v-model="$store.state.paymenttype" value="cash">Cash</md-radio>
+              <md-radio v-model="$store.state.paymenttype" value="check">Check</md-radio>
+              <md-radio v-model="$store.state.paymenttype" value="credit">Credit</md-radio>
+            </div>
+            <div>
+              <md-content>
+                <md-field>
+                  <label>Name for Credit Card</label>
+                  <md-input v-model="name" :disabled="this.$store.state.paymenttype != 'credit'"></md-input>
+                </md-field>
+                <md-field>
+                  <label>Phone for Credit Card</label>
+                  <md-input v-model="phone" :disabled="this.$store.state.paymenttype != 'credit'"></md-input>
+                </md-field>
+              </md-content>
+            </div>
+            <div class="paybill">
+              <md-button class="md-primary" @click="upload_record">Pay</md-button>
+              <md-button @click="showDialog=false">Back</md-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </md-dialog>
+
+    <md-dialog-confirm
+      :md-active.sync="confirmReset"
+      md-title="Cancel Order"
+      md-content="Please confirm you wish to clear the existing order."
+      md-confrim-text="Confirm"
+      md-cancel-text="Back"
+      @md-confirm="resetTable"
+      @md-cancel="confirmReset=false"
+    />
+
+    <md-dialog-confirm
+      :md-active.sync="deleteLastOrder"
+      md-title="Delete the Previous Paid Order"
+      md-content="Are you sure you want to delete the last PAID order?"
+      md-confrim-text="Delete"
+      md-cancel-text="Cancel"
+      @md-confirm="deleteLastRecord"
+      @md-cancel="deleteLastOrder=false"
+    />
+
+    <md-snackbar :md-duration="10000" :md-active.sync="showSnackbar">
+      <span>Previous paid for order has been deleted</span>
+      <md-button @click="showSnackbar=false">Close</md-button>
+    </md-snackbar>
+  </div>
+</template>
+
+<script>
+// @ is an alias to /src
+import { EventBus } from "../main.js";
+
+const request = require("request");
+
+export default {
+  name: "Total",
+  components: {},
+  methods: {
+    compute_totals: function(cont) {
+      cont.update();
+    },
+    update: function() {
+      console.log("in update");
+      this.pumpkin_count = 0;
+      this.pumpkin_total = 0;
+      this.gourd_count = 0;
+      this.gourd_total = 0;
+      this.other_count = 0;
+      this.other_total = 0;
+      this.grand_count = 0;
+      this.grand_total = 0;
+      let b = new Map(this.$store.state.invoice);
+      for (let [key, value] of b.entries()) {
+        if (value["class"] == "pumpkin") {
+          this.pumpkin_count = this.pumpkin_count + parseInt(value["count"]);
+          this.pumpkin_total = this.pumpkin_total + parseFloat(value["total"]);
+        } else if (value["class"] == "gourd") {
+          this.gourd_count = this.gourd_count + parseInt(value["count"]);
+          this.gourd_total = this.gourd_total + parseFloat(value["total"]);
+        } else if (value["class"] == "other") {
+          this.other_count = this.other_count + parseInt(value["count"]);
+          this.other_total = this.other_total + parseFloat(value["total"]);
+        }
+      }
+      this.grand_count =
+        this.pumpkin_count + this.gourd_count + this.other_count;
+      this.grand_total =
+        this.pumpkin_total + this.gourd_total + this.other_total;
+      this.$store.state.final_total = this.grand_total;
+      console.log("leaving update");
+    },
+    resetTable: function() {
+      this.confirmReset = false;
+      EventBus.$emit("rowreset");
+    },
+    donation_made: function() {
+      console.log("donation made");
+      console.log(this.$store.state.donation);
+      this.$store.state.final_total =
+        this.grand_total +
+        parseFloat(this.$store.state.donation) +
+        parseFloat(this.$store.state.bakesale);
+    },
+    upload_record: function() {
+      let r = {};
+      this.$store.state.invoice.forEach(function(value, key, map) {
+        let amount_label = key + "_total";
+        let count_label = key + "_count";
+        r[count_label] = value.count;
+        r[amount_label] = value.total;
+      });
+      r["total_pumpkin_count"] = this.pumpkin_count;
+      r["total_pumpkin_total"] = this.pumpkin_total;
+      r["total_gourd_count"] = this.gourd_count;
+      r["total_gourd_total"] = this.gourd_total;
+      r["total_other_count"] = this.other_count;
+      r["total_other_total"] = this.other_total;
+      r["total_count"] = this.grand_count;
+      r["total_sale"] = this.gourd_total;
+      r["timestamp"] = Date.now();
+
+      console.log(r);
+
+      request.post(this.$store.state.uploadurl, r, function(
+        error,
+        response,
+        body
+      ) {
+        if (!error && response.statusCode == 201) {
+          console.log("okay sent");
+        } else {
+          console.log("ERROR " + error);
+          console.log("STATUS_CODE " + response.statusCode);
+        }
+      });
+      this.showDialog = false;
+    }
+  },
+  mounted() {
+    var self = this;
+    EventBus.$on("totalchanged", function() {
+      self.compute_totals(self);
+    });
+  },
+
+  data: () => ({
+    pumpkin_count: 0,
+    pumpkin_total: 0,
+    gourd_count: 0,
+    gourd_total: 0,
+    other_count: 0,
+    other_total: 0,
+    grand_count: 0,
+    grand_total: 0,
+
+    showDialog: false,
+    confirmReset: false,
+    deleteLastOrder: false,
+    showSnackbar: false
+  })
+};
+</script>
