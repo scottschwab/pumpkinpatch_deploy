@@ -9,6 +9,7 @@
             :countof="item[2]"
             :itemTag="item[3]"
             v-on:rowchanged="onRowChange"
+            :tabidx="item[4]"
           />
         </md-list-item>
       </md-list>

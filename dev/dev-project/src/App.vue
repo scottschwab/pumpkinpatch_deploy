@@ -78,4 +78,10 @@
 .hidden {
   visibility: hidden;
 }
+
+.downloaddialog {
+  margin: 25px;
+  width: 150px;
+  height: 250px;
+}
 </style>
