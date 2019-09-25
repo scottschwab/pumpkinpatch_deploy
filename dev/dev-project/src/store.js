@@ -37,14 +37,18 @@ export default new Vuex.Store({
 
     donation: 0,
 
-    bakesale: 0,
+    bake_sale: 0,
 
     paymenttype: "cash",
 
-    uploadurl:
-      "https://pumpkinpatchazure3.azurewebsites.net/api/storepurchase?code=zkVphItVtUHdjU54JQIRa24klaSzLKl6Ol3BHIRuka8PmS4WWQ7kwA==",
-    downloadurl:
-      "https://pumpkinpatchazure3.azurewebsites.net/api/downloadpurchase?code=Di7Tr1tFaabAKaEasBeR9kueV8Yujlge8MnyBKI6DEgRUqu//OcR6g=="
+    host: "pumpkinpatchjan22.azurewebsites.net",
+    purchase: "/api/storepurchase",
+    purchaseCode:
+      "?code=ycWIkBB3L3ravHAfkLoaoBONWXef4bakeqpB1bGOLI02KBqGPYtnKA==",
+
+    download: "/api/downloadpurchase",
+    downloadCode:
+      "?code=jjGU9ZVa7vTW/5P9XvKFDfkXXhxI7/3eBJJJP6h7Ez1YLgWlRIlS8g=="
   },
   mutations: {},
   actions: {}

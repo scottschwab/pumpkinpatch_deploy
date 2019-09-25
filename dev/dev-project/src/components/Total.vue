@@ -19,13 +19,29 @@
       </div>
       <div class="otheroptions">
         <div>
-          <!-- md-button @click="deleteLastOrder=true" class="md-accent">Delete Last Order Paid</md-button -->
-        </div>
-        <div>
-          <!-- <md-button @click="downloadRecords">Download Records</md-button -->
+          <md-button @click="downloadDialog=true">Download Orders</md-button>
         </div>
       </div>
     </md-content>
+
+    <md-dialog :md-active.sync="downloadDialog" class="downloaddialog">
+      <div>
+        <md-dialog-title>Download Orders</md-dialog-title>
+      </div>
+      <div>
+        <md-datepicker id="fromDate" v-model="dateFrom">
+          <label>Starting</label>
+        </md-datepicker>
+      </div>
+      <div>
+        <md-datepicker id="toDate" v-model="dateTo">
+          <label>Through</label>
+        </md-datepicker>
+      </div>
+      <div>
+        <md-button @click="downloadingData">Get Link</md-button>
+      </div>
+    </md-dialog>
 
     <md-dialog :md-active.sync="showDialog" class="paydialog">
       <div class="paywrap">
@@ -44,7 +60,12 @@
             </div>
             <div class="bakesale">
               <label>Bake Sale&nbsp;$&nbsp;</label>
-              <md-input v-model="$store.state.bakesale" type="number" min="0" @input="bake_sale"></md-input>
+              <md-input
+                v-model="$store.state.bake_sale"
+                type="number"
+                min="0"
+                @input="bake_sale_made"
+              ></md-input>
             </div>
             <div class="amountdue">
               <span>Amount Due: $ {{ this.$store.state.final_total.toFixed(2) }}</span>
@@ -75,6 +96,20 @@
       </div>
     </md-dialog>
 
+    <md-dialog-alert
+      :md-active.sync="invalidDateRange"
+      md-title="Date Error"
+      md-content="Invalid date range"
+      md-confirm-text="Okay"
+    />
+
+    <md-dialog-alert
+      :md-active.sync="download_link_dialog"
+      md-title="Follow the link"
+      :md-content="download_link"
+      md-confirm-text="Okay"
+    />
+
     <md-dialog-confirm
       :md-active.sync="confirmReset"
       md-title="Cancel Order"
@@ -85,19 +120,24 @@
       @md-cancel="confirmReset=false"
     />
 
-    <md-dialog-confirm
-      :md-active.sync="deleteLastOrder"
-      md-title="Delete the Previous Paid Order"
-      md-content="Are you sure you want to delete the last PAID order?"
-      md-confrim-text="Delete"
-      md-cancel-text="Cancel"
-      @md-confirm="deleteLastRecord"
-      @md-cancel="deleteLastOrder=false"
-    />
-
     <md-snackbar :md-duration="10000" :md-active.sync="showSnackbar">
       <span>Previous paid for order has been deleted</span>
       <md-button @click="showSnackbar=false">Close</md-button>
+    </md-snackbar>
+
+    <md-snackbar :md-duration="20000" :md-active.sync="orderSuccessSnackbar">
+      <span>The order has been successfully recorded</span>
+      <md-button @click="orderSuccessSnackbar=false">Close</md-button>
+    </md-snackbar>
+
+    <md-snackbar :md-duration="30000" :md-active.sync="orderFailureSnackbar">
+      <span>There has been a problem and the order was not recorded, please use the paper form</span>
+      <md-button @click="orderFailureSnackbar=false">Close</md-button>
+    </md-snackbar>
+
+    <md-snackbar :md-duration="30000" :md-active.sync="downloadFailure">
+      <span>Download has failed, try again.</span>
+      <md-button @click="orderFailureSnackbar=false">Close</md-button>
     </md-snackbar>
   </div>
 </template>
@@ -106,7 +146,8 @@
 // @ is an alias to /src
 import { EventBus } from "../main.js";
 
-const request = require("request");
+const https = require("https");
+const fs = require("fs");
 
 export default {
   name: "Total",
@@ -153,10 +194,16 @@ export default {
       console.log("donation made");
       console.log(this.$store.state.donation);
       this.$store.state.final_total =
-        this.grand_total +
-        parseFloat(this.$store.state.donation) +
-        parseFloat(this.$store.state.bakesale);
+        this.grand_total + parseFloat(this.$store.state.donation);
     },
+
+    bake_sale_made: function() {
+      console.log("bake sale made");
+      console.log(this.$store.state.donation);
+      this.$store.state.final_total =
+        this.grand_total + parseFloat(this.$store.state.bake_sale);
+    },
+
     upload_record: function() {
       let r = {};
       this.$store.state.invoice.forEach(function(value, key, map) {
@@ -165,33 +212,126 @@ export default {
         r[count_label] = value.count;
         r[amount_label] = value.total;
       });
+
+      let d = new Date();
+
       r["total_pumpkin_count"] = this.pumpkin_count;
       r["total_pumpkin_total"] = this.pumpkin_total;
       r["total_gourd_count"] = this.gourd_count;
       r["total_gourd_total"] = this.gourd_total;
       r["total_other_count"] = this.other_count;
       r["total_other_total"] = this.other_total;
-      r["total_count"] = this.grand_count;
-      r["total_sale"] = this.gourd_total;
+      r["grand_count"] = this.grand_count;
+      r["bake_sale"] = this.$store.state.bake_sale;
+      r["grand_total"] = this.grand_total;
+      r["donation"] = this.$store.state.donation;
       r["timestamp"] = Date.now();
+      r["deleted"] = "F";
+      r["time"] = d.toLocaleTimeString();
+      r["date"] = d.toDateString();
+      r["phone"] = this.phone;
+      r["name"] = this.name;
+      r["payment_type"] = this.$store.state.paymenttype;
 
       console.log(r);
 
-      request.post(this.$store.state.uploadurl, r, function(
-        error,
-        response,
-        body
-      ) {
-        if (!error && response.statusCode == 201) {
-          console.log("okay sent");
-        } else {
-          console.log("ERROR " + error);
-          console.log("STATUS_CODE " + response.statusCode);
+      let upload_body = JSON.stringify(r);
+
+      var options = {
+        host: this.$store.state.host,
+        method: "POST",
+        port: 443,
+        path: this.$store.state.purchase + this.$store.state.purchaseCode,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Length": Buffer.byteLength(upload_body)
         }
+      };
+
+      const req = https.request(options, res => {
+        console.log(`STATUS: ${res.statusCode}`);
+        console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
+        res.setEncoding("utf8");
+        res.on("data", chunk => {
+          console.log(`BODY: ${chunk}`);
+        });
+        res.on("end", () => {
+          console.log("No more data in response.");
+        });
       });
+
+      req.on("error", e => {
+        console.error(`problem with request: ${e.message}`);
+        this.orderFailureSnackbar = true;
+      });
+
+      // Write data to request body
+      req.write(upload_body);
+      req.end();
+      this.orderSuccessSnackbar = true;
+      this.resetTable();
       this.showDialog = false;
+    },
+    downloadingData: function() {
+      console.log("from date ");
+      console.log(this.dateFrom);
+      console.log("todate");
+      console.log(this.dateTo);
+
+      if (this.dateFrom > this.dateTo) {
+        this.invalidDateRange = true;
+      } else {
+        this.download_link =
+          '<a href="' +
+          "https://" +
+          this.$store.state.host +
+          this.$store.state.download +
+          this.$store.state.downloadCode +
+          "&name=junk&start=" +
+          this.dateFrom.toString() +
+          "&end=" +
+          this.dateTo.toString() +
+          '">Download File</a>';
+
+        this.downloaddialog = false;
+        this.download_link_dialog = true;
+
+        // console.log(url);
+
+        // let urlpath =
+        //   this.$store.state.download +
+        //   this.$store.state.downloadCode +
+        //   "&name=junk&start=" +
+        //   this.dateFrom.toString() +
+        //   "&end=" +
+        //   this.dateTo.toString();
+
+        // var options = {
+        //   hostname: this.$store.state.host,
+        //   method: "GET",
+        //   port: 443,
+        //   path: urlpath
+        // };
+
+        // const req = https.request(options, res => {
+        //   res.on("end", () => {
+        //     console.log("No more data in response.");
+        //   });
+        //   res.on("data", d => {
+        //     process.stdout.write(d);
+        //   });
+        // });
+
+        // req.on("error", e => {
+        //   console.error(`problem with request: ${e.message}`);
+        //   this.downloadFailure = true;
+        // });
+
+        // req.end();
+      }
     }
   },
+
   mounted() {
     var self = this;
     EventBus.$on("totalchanged", function() {
@@ -209,10 +349,24 @@ export default {
     grand_count: 0,
     grand_total: 0,
 
+    phone: "",
+    name: "",
+
+    dateFrom: Date.now(),
+    dateTo: Date.now(),
+
+    invalidDateRange: false,
+    downloadDialog: false,
     showDialog: false,
     confirmReset: false,
-    deleteLastOrder: false,
-    showSnackbar: false
+
+    showSnackbar: false,
+    orderSuccessSnackbar: false,
+    orderFailureSnackbar: false,
+    downloadFailure: false,
+
+    download_link: "",
+    download_link_dialog: false
   })
 };
 </script>

@@ -73,11 +73,15 @@ export default {
   },
   methods: {
     checkLogin() {
+      var orgPassword = this.password;
+      var password1 = orgPassword.trim();
+      var password2 = password1.toLowerCase();
+
       let md5sum = crypto.createHash("md5");
-      md5sum.update(this.password);
+      md5sum.update(password2);
       let hash = md5sum.digest("hex");
       console.log("hash is " + hash);
-      if (this.validLogin == hash) {
+      if (this.validLogin1 == hash || this.validLogin2 == hash) {
         this.loginDialog = false;
       }
     }
@@ -118,7 +122,8 @@ export default {
   data: () => ({
     loginDialog: false,
     password: "***",
-    validLogin: "46eca36d89819445ca6369a6c2465bcf"
+    validLogin1: "46eca36d89819445ca6369a6c2465bcf",
+    validLogin2: "35e1c35490a4d068d6c949c6243ccda7"
   })
 };
 </script>
