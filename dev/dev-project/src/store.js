@@ -6,7 +6,7 @@ Vue.use(Vuex);
 export default new Vuex.Store({
   state: {
     pumpkins: [
-      ["@ $1.00 mimi is ", "1", "0", "mini", "10"],
+      ["@ $1.00 mini is ", "1", "0", "mini", "10"],
       ["@ $5.00 snowball is ", "5", "0", "snowball", "11"],
       ["@ $6.00 is", "6", "0", "pumpkin_6", "12"],
       ["@ $8.00 is", "8", "0", "pumpkin_8", "13"],
