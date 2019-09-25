@@ -32,6 +32,14 @@
         <Total />
       </md-card-content>
     </md-card>
+
+    <md-dialog :md-active.sync="loginDialog" class="logindialog">
+      <md-dialog-title>Login</md-dialog-title>
+      <md-input v-model="password"></md-input>
+      <div class="loginbutton">
+        <md-button class="md-primary" @click="checkLogin">Login</md-button>
+      </div>
+    </md-dialog>
   </div>
 </template>
 
@@ -53,6 +61,8 @@ import Gourds from "./Gourds.vue";
 import Other from "./Other.vue";
 import Total from "./Total.vue";
 
+const crypto = require("crypto");
+
 export default {
   name: "CardPage",
   components: {
@@ -61,9 +71,59 @@ export default {
     Other,
     Total
   },
-  props: {}
+  methods: {
+    checkLogin() {
+      var orgPassword = this.password;
+      var password1 = orgPassword.trim();
+      var password2 = password1.toLowerCase();
+
+      let md5sum = crypto.createHash("md5");
+      md5sum.update(password2);
+      let hash = md5sum.digest("hex");
+      console.log("hash is " + hash);
+      if (this.validLogin1 == hash || this.validLogin2 == hash) {
+        this.loginDialog = false;
+      }
+    }
+  },
+
+  mounted: function() {
+    this.$nextTick(function() {
+      this.loginDialog = true;
+    });
+  },
+
+  beforeMount: function() {
+    for (let item of this.$store.state.pumpkins) {
+      this.$store.state.invoice.set(item[3], {
+        class: "pumpkin",
+        count: item[2],
+        total: 0.0
+      });
+    }
+    for (let item of this.$store.state.gourds) {
+      this.$store.state.invoice.set(item[3], {
+        class: "gourd",
+        count: item[2],
+        total: 0.0
+      });
+    }
+    for (let item of this.$store.state.other) {
+      this.$store.state.invoice.set(item[3], {
+        class: "other",
+        count: item[2],
+        total: 0.0
+      });
+    }
+  },
+
+  props: {},
+
+  data: () => ({
+    loginDialog: false,
+    password: "***",
+    validLogin1: "46eca36d89819445ca6369a6c2465bcf",
+    validLogin2: "35e1c35490a4d068d6c949c6243ccda7"
+  })
 };
 </script>
-
-
-

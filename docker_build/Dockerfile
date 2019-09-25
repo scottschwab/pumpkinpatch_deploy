@@ -8,8 +8,8 @@ RUN apk add nodejs npm
 WORKDIR /var/pumpkin/src 
 RUN npm init -y
 RUN npm install --save vue vue-router vuex vue-numeric-input vue-material core-js global 
-RUN npm install --save-dep webpack webpack-cli
-RUN npm install --save-dev vue-loader vue-template-compiler vue-style-loader css-loader
+RUN npm install --save-dep webpack webpack-cli request
+RUN npm install --save-dev vue-loader vue-template-compiler vue-style-loader css-loader html-webpack-plugin
 RUN mkdir -p components  build /output/dist
 
 COPY ${SRC}/App.vue App.vue
@@ -34,5 +34,8 @@ RUN sed -f addbuild.sed package.json > package.json.1
 RUN mv package.json.1 package.json
 RUN npm run build
 
-RUN cp index.html /output
-RUN cp dist/main.js /output/dist
+WORKDIR build/dist
+COPY adddiv.sed adddiv.sed
+RUN cat index.html | sed -f adddiv.sed > /output/index.html
+RUN tar cvf /output/main.tar *.js
+

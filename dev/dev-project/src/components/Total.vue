@@ -147,7 +147,6 @@
 import { EventBus } from "../main.js";
 
 const https = require("https");
-const fs = require("fs");
 
 export default {
   name: "Total",
@@ -295,39 +294,6 @@ export default {
 
         this.downloaddialog = false;
         this.download_link_dialog = true;
-
-        // console.log(url);
-
-        // let urlpath =
-        //   this.$store.state.download +
-        //   this.$store.state.downloadCode +
-        //   "&name=junk&start=" +
-        //   this.dateFrom.toString() +
-        //   "&end=" +
-        //   this.dateTo.toString();
-
-        // var options = {
-        //   hostname: this.$store.state.host,
-        //   method: "GET",
-        //   port: 443,
-        //   path: urlpath
-        // };
-
-        // const req = https.request(options, res => {
-        //   res.on("end", () => {
-        //     console.log("No more data in response.");
-        //   });
-        //   res.on("data", d => {
-        //     process.stdout.write(d);
-        //   });
-        // });
-
-        // req.on("error", e => {
-        //   console.error(`problem with request: ${e.message}`);
-        //   this.downloadFailure = true;
-        // });
-
-        // req.end();
       }
     }
   },

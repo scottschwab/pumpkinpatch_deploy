@@ -3,7 +3,13 @@
     <md-content class="md-scrollbar">
       <md-list>
         <md-list-item v-for="item in this.$store.state.gourds" :key="item[0]">
-          <row :label="item[0]" :cost="item[1]" :countof="item[2]" v-on:rowchanged="onRowChange" />
+          <row
+            :label="item[0]"
+            :cost="item[1]"
+            :countof="item[2]"
+            :itemTag="item[3]"
+            v-on:rowchanged="onRowChange"
+          />
         </md-list-item>
       </md-list>
     </md-content>
@@ -20,9 +26,11 @@ export default {
   methods: {
     onRowChange(values) {
       console.log("on row change");
-      let name = "gourd_" + values["label"];
-      values["class"] = "gourd";
-      this.$store.state.invoice.set(name, values);
+      this.$store.state.invoice.set(values.itemTag, {
+        class: "gourd",
+        count: values.countof,
+        total: values.total
+      });
       EventBus.$emit("totalchanged");
     }
   }

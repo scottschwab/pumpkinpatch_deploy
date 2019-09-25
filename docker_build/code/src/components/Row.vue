@@ -13,6 +13,9 @@
       <td>
         <span class="rowtotal, dollar">&nbsp;$ {{ total.toFixed(2) }}</span>
       </td>
+      <td>
+        <span class="hidden">&nbsp;{{ itemTag }}</span>
+      </td>
     </tr>
   </div>
 </template>
@@ -26,7 +29,8 @@ export default {
     countof: { type: String, default: "0" },
     cost: { type: String, default: "0" },
     label: { type: String, default: "n/a" },
-    prefix: { type: String, default: " " }
+    prefix: { type: String, default: " " },
+    itemTag: { type: String, default: "-" }
   },
   methods: {
     computetotal: function() {
@@ -34,7 +38,8 @@ export default {
       this.$emit("rowchanged", {
         label: this.$props.label,
         countof: this.countout,
-        total: this.total
+        total: this.total,
+        itemTag: this.$props.itemTag
       });
     },
     resetvalue: function() {
@@ -55,7 +60,8 @@ export default {
     return {
       labelout: this.$props.label,
       countout: countout,
-      total: total
+      total: total,
+      itemTag: this.$props.itemTag
     };
   }
 };

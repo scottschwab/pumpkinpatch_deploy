@@ -74,4 +74,8 @@
 .numinput {
   width: 40px;
 }
+
+.hidden {
+  visibility: hidden;
+}
 </style>
