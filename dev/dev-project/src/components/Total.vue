@@ -277,7 +277,7 @@ export default {
       this.showDialog = false;
     },
     downloadingData: function() {
-      this.dateTo = this.dateTo + 24 * 60 * 60 * 1000; // end of day
+      this.dateTo = this.dateTo + 23 * 59 * 60 * 1000; // almost end of day
       console.log("from date ");
       console.log(this.dateFrom);
       console.log("todate");
