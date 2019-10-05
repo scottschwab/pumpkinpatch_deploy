@@ -79,7 +79,7 @@
             <div>
               <md-content>
                 <md-field>
-                  <label>Name for Credit Card</label>
+                  <label>Name on the Credit Card</label>
                   <md-input v-model="name" :disabled="this.$store.state.paymenttype != 'credit'"></md-input>
                 </md-field>
                 <md-field>
