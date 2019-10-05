@@ -40,6 +40,7 @@
       </div>
       <div>
         <md-button @click="downloadingData">Get Link</md-button>
+        <md-button @click="downloadDialog=false">Cancel</md-button>
       </div>
     </md-dialog>
 
@@ -269,9 +270,14 @@ export default {
       req.end();
       this.orderSuccessSnackbar = true;
       this.resetTable();
+      this.$store.state.donation = "";
+      this.$store.state.bake_sale = "";
+      this.phone = "";
+      this.name = "";
       this.showDialog = false;
     },
     downloadingData: function() {
+      this.dateTo = this.dateTo + 23 * 59 * 60 * 1000; // almost end of day
       console.log("from date ");
       console.log(this.dateFrom);
       console.log("todate");
@@ -286,7 +292,7 @@ export default {
           this.$store.state.host +
           this.$store.state.download +
           this.$store.state.downloadCode +
-          "&name=junk&start=" +
+          "&start=" +
           this.dateFrom.toString() +
           "&end=" +
           this.dateTo.toString() +

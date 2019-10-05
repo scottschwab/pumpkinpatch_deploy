@@ -34,8 +34,8 @@
     </md-card>
 
     <md-dialog :md-active.sync="loginDialog" class="logindialog">
-      <md-dialog-title>Login</md-dialog-title>
-      <md-input v-model="password"></md-input>
+      <md-dialog-title>Password</md-dialog-title>
+      <md-input v-model="password" v-on:keyup.enter="checkLogin"></md-input>
       <div class="loginbutton">
         <md-button class="md-primary" @click="checkLogin">Login</md-button>
       </div>
@@ -121,7 +121,7 @@ export default {
 
   data: () => ({
     loginDialog: false,
-    password: "***",
+    password: "",
     validLogin1: "46eca36d89819445ca6369a6c2465bcf",
     validLogin2: "35e1c35490a4d068d6c949c6243ccda7"
   })

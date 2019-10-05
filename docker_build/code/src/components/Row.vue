@@ -2,7 +2,13 @@
   <div>
     <tr>
       <td>
-        <vue-numeric-input v-model="countout" :min="0" :step="1" @input="computetotal"></vue-numeric-input>
+        <vue-numeric-input
+          v-model="countout"
+          :min="0"
+          :step="1"
+          @input="computetotal"
+          :tabindex="tabidx"
+        ></vue-numeric-input>
       </td>
       <td>
         <span class="filler">{{ prefix }}</span>
