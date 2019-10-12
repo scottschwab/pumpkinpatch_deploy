@@ -19,6 +19,7 @@
       </div>
       <div class="otheroptions">
         <div>
+          <md-button @click="uploadData">Upload Orders</md-button>
           <md-button @click="downloadDialog=true">Download Orders</md-button>
         </div>
       </div>
@@ -54,6 +55,7 @@
               <label>Donation&nbsp;$&nbsp;</label>
               <md-input
                 v-model="$store.state.donation"
+                v-on:keydown.enter="donation_made"
                 type="number"
                 min="0"
                 @input="donation_made"
@@ -63,6 +65,7 @@
               <label>Bake Sale&nbsp;$&nbsp;</label>
               <md-input
                 v-model="$store.state.bake_sale"
+                v-on:keydown.enter="bake_sale_made"
                 type="number"
                 min="0"
                 @input="bake_sale_made"
@@ -182,26 +185,35 @@ export default {
       this.grand_count =
         this.pumpkin_count + this.gourd_count + this.other_count;
       this.grand_total =
-        this.pumpkin_total + this.gourd_total + this.other_total;
+        this.pumpkin_total +
+        this.gourd_total +
+        this.other_total +
+        parseFloat(this.$store.state.donation) +
+        parseFloat(this.$store.state.bake_sale);
       this.$store.state.final_total = this.grand_total;
+
       console.log("leaving update");
     },
     resetTable: function() {
       this.confirmReset = false;
+      this.$store.state.donation = 0;
+      this.$store.state.bake_sale = 0;
       EventBus.$emit("rowreset");
     },
     donation_made: function() {
       console.log("donation made");
       console.log(this.$store.state.donation);
-      this.$store.state.final_total =
-        this.grand_total + parseFloat(this.$store.state.donation);
+      this.update();
+      // this.$store.state.final_total =
+      //   this.grand_total + parseFloat(this.$store.state.donation);
     },
 
     bake_sale_made: function() {
       console.log("bake sale made");
-      console.log(this.$store.state.donation);
-      this.$store.state.final_total =
-        this.grand_total + parseFloat(this.$store.state.bake_sale);
+      console.log(this.$store.state.bake_sale);
+      this.update();
+      // this.$store.state.final_total =
+      //   this.grand_total + parseFloat(this.$store.state.bake_sale);
     },
 
     upload_record: function() {
@@ -214,7 +226,21 @@ export default {
       });
 
       let d = new Date();
-
+      if (this.$store.state.paymenttype === "cash") {
+        r["cash_payment"] = this.grand_total;
+        r["check_payment"] = 0;
+        r["credit_payment"] = 0;
+      } else if (this.$store.state.paymenttype === "check") {
+        r["cash_payment"] = 0;
+        r["check_payment"] = this.grand_total;
+        r["credit_payment"] = 0;
+      } else {
+        r["cash_payment"] = 0;
+        r["check_payment"] = 0;
+        r["credit_payment"] = this.grand_total;
+      }
+      r["pumpkinusa_total"] =
+        this.pumpkin_total + this.gourd_total + this.$store.state.sticker_total;
       r["total_pumpkin_count"] = this.pumpkin_count;
       r["total_pumpkin_total"] = this.pumpkin_total;
       r["total_gourd_count"] = this.gourd_count;
@@ -232,46 +258,17 @@ export default {
       r["phone"] = this.phone;
       r["name"] = this.name;
       r["payment_type"] = this.$store.state.paymenttype;
-
+      r["pumpkinusa_total"] =
+        r["total_pumpkin_total"] + r["total_gourd_total"] + r["sticker_total"];
       console.log(r);
 
       let upload_body = JSON.stringify(r);
 
-      var options = {
-        host: this.$store.state.host,
-        method: "POST",
-        port: 443,
-        path: this.$store.state.purchase + this.$store.state.purchaseCode,
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Content-Length": Buffer.byteLength(upload_body)
-        }
-      };
+      localStorage.setItem(Date.now().toString(), upload_body);
 
-      const req = https.request(options, res => {
-        console.log(`STATUS: ${res.statusCode}`);
-        console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
-        res.setEncoding("utf8");
-        res.on("data", chunk => {
-          console.log(`BODY: ${chunk}`);
-        });
-        res.on("end", () => {
-          console.log("No more data in response.");
-        });
-      });
-
-      req.on("error", e => {
-        console.error(`problem with request: ${e.message}`);
-        this.orderFailureSnackbar = true;
-      });
-
-      // Write data to request body
-      req.write(upload_body);
-      req.end();
-      this.orderSuccessSnackbar = true;
       this.resetTable();
-      this.$store.state.donation = "";
-      this.$store.state.bake_sale = "";
+      this.$store.state.donation = 0;
+      this.$store.state.bake_sale = 0;
       this.phone = "";
       this.name = "";
       this.showDialog = false;
@@ -300,6 +297,58 @@ export default {
 
         this.downloaddialog = false;
         this.download_link_dialog = true;
+      }
+    },
+
+    uploadRecord: function(rec) {
+      let rc = true;
+      var options = {
+        host: this.$store.state.host,
+        method: "POST",
+        port: 443,
+        path: this.$store.state.purchase + this.$store.state.purchaseCode,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Length": Buffer.byteLength(rec)
+        }
+      };
+
+      const req = https.request(options, res => {
+        console.log(`STATUS: ${res.statusCode}`);
+        console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
+        res.setEncoding("utf8");
+        res.on("data", chunk => {
+          console.log(`BODY: ${chunk}`);
+        });
+        res.on("end", () => {
+          console.log("No more data in response.");
+        });
+      });
+
+      req.on("error", e => {
+        console.error(`problem with request: ${e.message}`);
+        rc = false;
+        this.orderFailureSnackbar = true;
+      });
+
+      // Write data to request body
+      req.write(rec);
+      req.end();
+      return rc;
+    },
+
+    uploadData: function() {
+      let removeItemList = [];
+      console.log(localStorage.length);
+      for (let x = 0; x < localStorage.length; x++) {
+        let k = localStorage.key(x);
+        console.log(localStorage.getItem(k));
+        if (this.uploadRecord(localStorage.getItem(k))) {
+          removeItemList.push(k);
+        }
+      }
+      for (let y = 0; y < removeItemList.length; y++) {
+        localStorage.removeItem(removeItemList[y]);
       }
     }
   },
