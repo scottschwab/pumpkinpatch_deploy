@@ -141,7 +141,17 @@
 
     <md-snackbar :md-duration="30000" :md-active.sync="downloadFailure">
       <span>Download has failed, try again.</span>
-      <md-button @click="orderFailureSnackbar=false">Close</md-button>
+      <md-button @click="downloadFailure=false">Close</md-button>
+    </md-snackbar>
+
+    <md-snackbar :md-duration="10000" :md-active.sync="uploadStart">
+      <span>Starting to uploading {{ record_count_pending }} records.</span>
+      <md-button @click="uploadStart=false">Close</md-button>
+    </md-snackbar>
+
+    <md-snackbar :md-duration="10000" :md-active.sync="uploadFinished">
+      <span>Completed the upload of {{ record_count_uploaded }} records.</span>
+      <md-button @click="uploadFinished=false">Close</md-button>
     </md-snackbar>
   </div>
 </template>
@@ -339,7 +349,9 @@ export default {
 
     uploadData: function() {
       let removeItemList = [];
+      this.record_count_pending = localStorage.length;
       console.log(localStorage.length);
+      this.uploadStart = true;
       for (let x = 0; x < localStorage.length; x++) {
         let k = localStorage.key(x);
         console.log(localStorage.getItem(k));
@@ -347,9 +359,12 @@ export default {
           removeItemList.push(k);
         }
       }
+      this.record_count_uploaded = 0;
       for (let y = 0; y < removeItemList.length; y++) {
         localStorage.removeItem(removeItemList[y]);
+        this.record_count_uploaded = this.record_count_uploaded + 1;
       }
+      this.uploadFinished = true;
     }
   },
 
@@ -387,7 +402,13 @@ export default {
     downloadFailure: false,
 
     download_link: "",
-    download_link_dialog: false
+    download_link_dialog: false,
+
+    uploadStart: false,
+    uploadFinished: false,
+
+    record_count_pending: 0,
+    record_count_uploaded: 0
   })
 };
 </script>
